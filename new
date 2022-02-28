@@ -1,0 +1,80 @@
+import numpy as np
+import matplotlib.pyplot as ppl
+from scipy.stats import norm
+
+def filter(value, mean, std) -> bool: # Функция фильтрации результатов для отбрасывания грубых отклонений
+    
+    diff = abs(value - mean) #  Проверка по правилу трёх сигм
+    if diff > 3 * std:
+        return False
+        
+    Ft = [0, 0.0399, 0.0797, 0.1192,0.1585,0.1974,0.2358,0.2737,0.3108,0.3473,0.3829,0.4177,0.4515, # Список значений интеграла вероятностей
+          0.4843,0.5161,0.5468,0.5763,0.6047,0.6319,0.6579,0.6827,0.7063,0.7287,0.7499,0.7699,
+          0.7887,0.8064,0.823,0.8385,0.8529,0.8664,0.8789,0.8904,0.9011,0.9109,0.9199,0.9281,0.9357,
+          0.9426,0.9488,0.9545,0.9596,0.9643,0.9684,0.9722,0.9756,0.9786,0.9812,0.9836,0.9857,0.9876,
+          0.9892,0.9907,0.992,0.9931,0.994,0.9949,0.9956,0.9963,0.9968,0.9973,0.99806,0.99863,0.99903,
+          0.99933,0.99953,0.99968,0.99978,0.99986,0.9999,0.99994,0.99996,0.99997,0.99999,0.999994] 
+        
+    z = round(diff / std, 2) # Критерий Zc
+    tmp = 0
+    Ft_right = 0
+    
+    for i in range(len(Ft) - 1): # Нахождение значения интеграла вероятности для каждого переданного резульатата
+        if(z >= tmp and z < tmp + 0.05):
+            Ft_right = Ft[i]
+        tmp+=0.05
+               
+    return Ft_right < 0.95 # Отбрасывание результатов значение которых неменьше 0.95
+
+
+def histogram(results,new_results,mean): # Функция для создания гистограмы
+    
+    _, ax = ppl.subplots()
+    counts, bins = np.histogram(new_results, bins=5) # Создание гистограммы с 5 интервалами
+    freqs = list()
+    for index in range(len(counts)):
+        freqs.append(float(counts[index]) / len(new_results)) # Частота попадания в каждый интервал
+    ax.hist(bins[:-1], bins, weights=freqs) # Построение гистограммы на графике
+    ax.plot([np.mean(new_results), np.mean(new_results)], [0, max(freqs)], label="среднее:{:.3f}".format(np.mean(new_results)), linestyle="--") # построение линии среднего выборочного
+    ax.set_xlabel("Значения")
+    ax.set_ylabel("Вероятность")
+    ax.legend()
+    ppl.title("Медиана:{:.3f}, среднее до фильтрации:{:.3f}".format(np.median(results), mean))
+    ppl.show()
+    
+def shuhartCard(data): # Функция построения карты Шухарта 
+    _, ax = ppl.subplots()
+    ppl.title("Контрольная карта Шухарта")
+    mean = np.mean(data)
+    std = np.std(data)
+    points = [index for index in range(len(data))] # список точек результатов
+    ax.plot(points, [mean for _ in range(len(data))], linestyle="-.") # среднее значение
+    ax.plot(points, data, marker=".", label="Значения", markersize=10) # точки резултатов 
+    ax.plot(points, [mean + 3 * std for val in range(len(data))], color="red", linestyle="-.") # верхняя контрольная граница
+    ax.plot(points, [mean - 3 * std for val in range(len(data))], color="red", linestyle="-.") # нижняя контрольная граница
+    ppl.text(len(points), mean + 3 * std, "UCLX")
+    ppl.text(len(points), mean - 3 * std, "LCLX")
+    ppl.text(len(points), mean, "<X>")
+    ax.set_xlim([points[0] - 4, points[-1] + 4])
+    ppl.show()    
+
+def test():
+    results = [0.0480, 0.0498, 0.0514, 0.0517, 0.0563, 0.0467, 0.0473, 0.0459, 0.0509, # Список заданных по варианту результатов
+            0.0522, 0.0482, 0.0463, 0.0481, 0.0501, 0.0465, 0.0460, 0.0464, 0.0498,
+            0.0556, 0.0496, 0.0507, 0.0469, 0.0475, 0.0540, 0.0485, 0.0490, 0.0515,
+            0.0528, 0.0534, 0.0440, 0.0487, 0.0493, 0.0489, 0.0520, 0.0531]
+    mean = np.mean(results) # нахождение среднего выборочного
+    # print (mean)
+    std = np.std(results) # нахождение стандартного отклонения
+    # print (std)
+    new_results = []
+    for value in results: # новые отфильтрованные результаты
+        if filter(value, mean, std):
+            new_results.append(value)
+    print(new_results)
+    print(len(new_results))
+    histogram(results,new_results,mean) # построение гистограммы
+    shuhartCard(new_results) # построение карт Шухарта
+    shuhartCard(results)
+
+test()
