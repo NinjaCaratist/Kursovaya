@@ -1,4 +1,4 @@
 # LAB_2
-Second labaratory for PI
-Programm for analitycs of researches in metrology
+Course work for Programm Ingenering
+Programm can find the crosses of lines with Bentley-Ottman algorithm
 This README is for new_1 branch
